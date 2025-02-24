@@ -127,7 +127,7 @@ ORDER BY 5 DESC;
 ```
 
 ### Q2: Most Popular Genre by Country
-#### Method 1: Using CTE
+#### Using CTE
 ```sql
 WITH popular_genre AS (
     SELECT COUNT(invoice_line.quantity) AS purchases, customer.country, genre.name, genre.genre_id, 
@@ -141,31 +141,9 @@ WITH popular_genre AS (
 )
 SELECT * FROM popular_genre WHERE RowNo <= 1;
 ```
-#### Method 2: Using Recursive Query
-```sql
-WITH RECURSIVE
-    sales_per_country AS (
-        SELECT COUNT(*) AS purchases_per_genre, customer.country, genre.name, genre.genre_id
-        FROM invoice_line
-        JOIN invoice ON invoice.invoice_id = invoice_line.invoice_id
-        JOIN customer ON customer.customer_id = invoice.customer_id
-        JOIN track ON track.track_id = invoice_line.track_id
-        JOIN genre ON genre.genre_id = track.genre_id
-        GROUP BY 2, 3, 4
-    ),
-    max_genre_per_country AS (
-        SELECT MAX(purchases_per_genre) AS max_genre_number, country
-        FROM sales_per_country
-        GROUP BY 2
-    )
-SELECT sales_per_country.* 
-FROM sales_per_country
-JOIN max_genre_per_country ON sales_per_country.country = max_genre_per_country.country
-WHERE sales_per_country.purchases_per_genre = max_genre_per_country.max_genre_number;
-```
 
 ### Q3: Top-Spending Customers by Country
-#### Method 1: Using CTE
+#### Using CTE
 ```sql
 WITH customer_with_country AS (
     SELECT customer.customer_id, first_name, last_name, billing_country, SUM(total) AS total_spending,
@@ -176,24 +154,4 @@ WITH customer_with_country AS (
 )
 SELECT * FROM customer_with_country WHERE RowNo <= 1;
 ```
-#### Method 2: Using Recursive Query
-```sql
-WITH RECURSIVE 
-    customer_with_country AS (
-        SELECT customer.customer_id, first_name, last_name, billing_country, SUM(total) AS total_spending
-        FROM invoice
-        JOIN customer ON customer.customer_id = invoice.customer_id
-        GROUP BY 1, 2, 3, 4
-    ),
-    country_max_spending AS (
-        SELECT billing_country, MAX(total_spending) AS max_spending
-        FROM customer_with_country
-        GROUP BY billing_country
-    )
-SELECT cc.billing_country, cc.total_spending, cc.first_name, cc.last_name, cc.customer_id
-FROM customer_with_country cc
-JOIN country_max_spending ms
-ON cc.billing_country = ms.billing_country
-WHERE cc.total_spending = ms.max_spending
-ORDER BY 1;
-```
+
